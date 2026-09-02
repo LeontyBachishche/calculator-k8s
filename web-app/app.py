@@ -125,5 +125,23 @@ def calculate():
     connection.close()
     return jsonify({"status": "task queued", "source": "queue"})
 
+def init_db():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                username VARCHAR(255) UNIQUE NOT NULL
+            );
+        """)
+        conn.commit()
+        cur.close()
+        conn.close()
+        print("✅ База данных успешно инициализирована (таблица users готова).")
+    except Exception as e:
+        print(f"❌ Не удалось инициализировать БД: {e}")
+
 if __name__ == '__main__':
+    init_db()
     app.run(host='0.0.0.0', port=5000)

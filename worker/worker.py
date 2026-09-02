@@ -3,6 +3,7 @@ import json
 import psycopg2
 from redis import Redis
 import os
+import time # Добавлено для пауз при переподключении
 
 REDIS_HOST = os.getenv('REDIS_HOST', 'redis')
 POSTGRES_HOST = os.getenv('POSTGRES_HOST', 'postgres')
@@ -17,6 +18,27 @@ RABBITMQ_PASSWORD = os.getenv('RABBITMQ_PASSWORD', 'admin')
 REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None)
 
 redis = Redis(host=REDIS_HOST, port=6379, password=REDIS_PASSWORD, decode_responses=True)
+
+def init_db():
+    """Создает таблицу history, если её еще нет в базе данных"""
+    try:
+        conn = psycopg2.connect(host=POSTGRES_HOST, database=DB_NAME, user=DB_USER, password=DB_PASSWORD)
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS history (
+                id SERIAL PRIMARY KEY,
+                username VARCHAR(255) NOT NULL,
+                expression VARCHAR(255) NOT NULL,
+                result VARCHAR(255) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+        conn.commit()
+        cur.close()
+        conn.close()
+        print("✅ Таблица history успешно проверена/создана.")
+    except Exception as e:
+        print(f"❌ Ошибка инициализации таблицы history: {e}")
 
 def db_save(username, exp, res):
     conn = psycopg2.connect(
@@ -40,14 +62,31 @@ def callback(ch, method, properties, body):
         db_save(username, data['expression'], result)
         print(f"User [{username}] Calculated: {data['expression']} = {result}")
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error evaluating/saving: {e}")
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
-credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASSWORD)
+def main():
+    init_db() # Инициализируем БД перед подключением к очереди
+    
+    credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASSWORD)
+    parameters = pika.ConnectionParameters(host=RABBITMQ_HOST, credentials=credentials)
+    
+    # Бесконечный цикл для ожидания запуска RabbitMQ в K8s
+    while True:
+        try:
+            print('Connecting to RabbitMQ...')
+            connection = pika.BlockingConnection(parameters)
+            channel = connection.channel()
+            channel.queue_declare(queue='calc_tasks')
+            channel.basic_consume(queue='calc_tasks', on_message_callback=callback)
+            print('Worker started. Waiting for tasks...')
+            channel.start_consuming()
+        except pika.exceptions.AMQPConnectionError:
+            print("❗ RabbitMQ еще не готов. Повторная попытка через 5 секунд...")
+            time.sleep(5)
+        except KeyboardInterrupt:
+            print("Worker stopped.")
+            break
 
-connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST, credentials=credentials))
-channel = connection.channel()
-channel.queue_declare(queue='calc_tasks')
-channel.basic_consume(queue='calc_tasks', on_message_callback=callback)
-print('Worker started. Waiting for tasks...')
-channel.start_consuming()
+if __name__ == '__main__':
+    main()
