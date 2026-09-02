@@ -8,14 +8,22 @@ REDIS_HOST = os.getenv('REDIS_HOST', 'redis')
 POSTGRES_HOST = os.getenv('POSTGRES_HOST', 'postgres')
 RABBITMQ_HOST = os.getenv('RABBITMQ_HOST', 'rabbitmq')
 
-redis = Redis(host=REDIS_HOST, port=6379)
+DB_NAME = os.getenv('DB_NAME', 'calc_db')
+DB_USER = os.getenv('DB_USER', 'admin')
+DB_PASSWORD = os.getenv('DB_PASSWORD', 'admin123')
+
+RABBITMQ_USER = os.getenv('RABBITMQ_USER', 'admin')
+RABBITMQ_PASSWORD = os.getenv('RABBITMQ_PASSWORD', 'admin')
+REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None)
+
+redis = Redis(host=REDIS_HOST, port=6379, password=REDIS_PASSWORD, decode_responses=True)
 
 def db_save(username, exp, res):
     conn = psycopg2.connect(
-        host=POSTGRES_HOST, 
-        database='calc_db', 
-        user='admin', 
-        password='admin123'
+        host=POSTGRES_HOST,
+        database=DB_NAME,
+        user=DB_USER,
+        password=DB_PASSWORD
     )
     cur = conn.cursor()
     cur.execute('INSERT INTO history (username, expression, result) VALUES (%s, %s, %s);', (username, exp, str(res)))
@@ -35,7 +43,7 @@ def callback(ch, method, properties, body):
         print(f"Error: {e}")
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
-credentials = pika.PlainCredentials('admin', 'admin')
+credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASSWORD)
 
 connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST, credentials=credentials))
 channel = connection.channel()

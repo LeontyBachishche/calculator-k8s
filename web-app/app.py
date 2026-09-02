@@ -1,11 +1,10 @@
-from flask import Flask, request, jsonify, render_template_string
+from flask import Flask, request, jsonify, render_template_string, Response
 from redis import Redis
 import psycopg2
 import pika
 import json
 import os
 from prometheus_client import Counter, generate_latest
-from flask import Response
 
 app = Flask(__name__)
 
@@ -13,7 +12,16 @@ REDIS_HOST = os.getenv('REDIS_HOST', 'redis')
 POSTGRES_HOST = os.getenv('POSTGRES_HOST', 'postgres')
 RABBITMQ_HOST = os.getenv('RABBITMQ_HOST', 'rabbitmq')
 
-redis = Redis(host=REDIS_HOST, port=6379)
+DB_NAME = os.getenv('DB_NAME', 'calc_db')
+DB_USER = os.getenv('DB_USER', 'admin')
+DB_PASSWORD = os.getenv('DB_PASSWORD', 'admin123')
+
+RABBITMQ_USER = os.getenv('RABBITMQ_USER', 'admin')
+RABBITMQ_PASSWORD = os.getenv('RABBITMQ_PASSWORD', 'admin')
+REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None)
+
+redis = Redis(host=REDIS_HOST, port=6379, password=REDIS_PASSWORD, decode_responses=True)
+
 REQUEST_COUNT = Counter('calc_requests_total', 'Total app requests', ['method', 'endpoint'])
 
 HTML_INTERFACE = """
@@ -78,7 +86,7 @@ HTML_INTERFACE = """
 """
 
 def get_db_connection():
-    return psycopg2.connect(host=POSTGRES_HOST, database='calc_db', user='admin', password='admin123')
+    return psycopg2.connect(host=POSTGRES_HOST, database=DB_NAME, user=DB_USER, password=DB_PASSWORD)
 
 @app.route('/')
 def index():
@@ -106,9 +114,9 @@ def calculate():
     data = request.json
     cached_res = redis.get(data['expression'])
     if cached_res:
-        return jsonify({"result": cached_res.decode('utf-8'), "source": "cache"})
+        return jsonify({"result": cached_res, "source": "cache"})
 
-    credentials = pika.PlainCredentials('admin', 'admin')
+    credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASSWORD)
     parameters = pika.ConnectionParameters(host=RABBITMQ_HOST, credentials=credentials)
     connection = pika.BlockingConnection(parameters)
     channel = connection.channel()

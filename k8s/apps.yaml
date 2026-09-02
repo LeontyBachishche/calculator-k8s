@@ -18,6 +18,36 @@ spec:
         imagePullPolicy: Never
         ports:
         - containerPort: 5000
+        env:
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        - name: REDIS_HOST
+          value: "redis"
+        - name: POSTGRES_HOST
+          value: "postgres"
+        - name: RABBITMQ_HOST
+          value: "rabbitmq"
+        - name: DB_NAME
+          value: "calc_db"
+        - name: DB_USER
+          value: "admin"
+        - name: RABBITMQ_USER
+          value: "admin"
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: calc-secrets
+              key: postgres-password
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: calc-secrets
+              key: redis-password
+        - name: RABBITMQ_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: calc-secrets
+              key: rabbitmq-password
 ---
 apiVersion: v1
 kind: Service
@@ -50,3 +80,30 @@ spec:
         env:
         - name: PYTHONUNBUFFERED
           value: "1"
+        - name: REDIS_HOST
+          value: "redis"
+        - name: POSTGRES_HOST
+          value: "postgres"
+        - name: RABBITMQ_HOST
+          value: "rabbitmq"
+        - name: DB_NAME
+          value: "calc_db"
+        - name: DB_USER
+          value: "admin"
+        - name: RABBITMQ_USER
+          value: "admin"
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: calc-secrets
+              key: postgres-password
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: calc-secrets
+              key: redis-password
+        - name: RABBITMQ_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: calc-secrets
+              key: rabbitmq-password
