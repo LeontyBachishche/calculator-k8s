@@ -116,10 +116,12 @@ kind: Service
 metadata:
   name: rabbitmq
 spec:
+  type: NodePort
   ports:
   - name: amqp
     port: 5672
   - name: management
     port: 15672
+    nodePort: 31672
   selector:
     app: rabbitmq

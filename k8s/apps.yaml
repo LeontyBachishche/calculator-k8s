@@ -57,7 +57,7 @@ spec:
   type: NodePort
   ports:
   - port: 5000
-    targetPort: 5000
+    nodePort: 32500
   selector:
     app: web-app
 ---
