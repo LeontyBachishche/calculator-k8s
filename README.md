@@ -37,25 +37,29 @@
 ## 🚀 Быстрый запуск в Minikube
 
 ### 1. Подготовка окружения и сборка образов
-Включите движок BuildKit, переключите контекст терминала на Docker-демон внутри Minikube и соберите актуальные образы приложений:
+Запустите терминал от имени Администратора, переключите контекст терминала на внутренний Docker-демон Minikube и соберите актуальные образы приложений из чистых файлов:
 
 **Для Windows (PowerShell):**
 ```powershell
-# Включение современного движка сборки
-\$env:DOCKER_BUILDKIT=1
+# 1. Добавляем Docker-клиент Minikube в PATH текущей сессии
+# Иногда отсутствует \bin
+$env:Path += ";$env:USERPROFILE\.minikube\bin"
 
-# Активация окружения Minikube
+# 2. Связываем терминал с Docker-демоном внутри Minikube
 minikube docker-env | Invoke-Expression
 
-# Сборка компонентов
+# 3. Сборка компонентов
 docker build -t calc-web-app:latest ./web-app
 docker build -t calc-worker:latest ./worker
+
 ```
 
 **Для Linux / macOS (Bash):**
 ```bash
-export DOCKER_BUILDKIT=1
+# 1. Активация окружения Minikube
 eval \$(minikube docker-env)
+
+# 2. Сборка компонентов
 docker build -t calc-web-app:latest ./web-app
 docker build -t calc-worker:latest ./worker
 ```
@@ -75,22 +79,17 @@ docker build -t calc-worker:latest ./worker
    echo -n 'my_password' | base64
    ```
 
-2. Создайте файл `k8s/secrets.yaml` на основе вашего шаблона секретов, подставив полученные Base64-строки.
-3. Примените все конфигурации одной командой из корня проекта:
+2. Создайте локальный файл `k8s/secrets.yaml` на основе вашего шаблона секретов (`k8s/secrets.yaml.template`), подставив полученные Base64-строки.
+3. Запустите всю экосистему одной командой из корня проекта:
    ```bash
-   kubectl apply -f ./k8s/
+   kubectl apply -f k8s/
    ```
 
 ---
 
 ### 🔗 Ссылки для доступа к сервисам в браузере
 
-Если вы используете Minikube на Windows с Docker-драйвером, для получения прямой ссылки на любой веб-интерфейс запустите команду туннелирования:
-```powershell
-minikube service <имя-сервиса> --url
-```
-
-В общем случае (при использовании виртуальных машин) доступ осуществляется по IP-адресу кластера (`minikube ip`):
+Узнайте IP-адрес вашего кластера с помощью команды `minikube ip`. Доступ к развернутым инструментам осуществляется по следующим адресам:
 
 * 🧮 **Калькулятор (через HAProxy):** `http://<MINIKUBE_IP>:30080`
 * 📊 **Grafana Дашборды:** `http://<MINIKUBE_IP>:30030`
@@ -99,7 +98,7 @@ minikube service <имя-сервиса> --url
 * 🐰 **RabbitMQ Управление:** `http://<MINIKUBE_IP>:31672`
 * 🔍 **Elasticsearch API:** `http://<MINIKUBE_IP>:30200`
 
-💡 **Подсказка:** Список всех запущенных веб-интерфейсов и автоматическое открытие ссылок на них можно сделать одной командой:
+💡 **Подсказка:** Список всех запущенных веб-интерфейсов, их порты и автоматическое открытие ссылок на них в браузере можно сделать одной командой:
 ```powershell
 minikube service --all
 ```
