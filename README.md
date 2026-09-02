@@ -45,45 +45,39 @@ docker build -t calc-worker:latest ./worker
 
 ### 2. Развертывание инфраструктуры и секретов
 
-1. Закодируйте ваши пароли в формат Base64:
-   ```bash
-   echo -n 'your_password' | base64
-   ```
-2. Создайте локальный файл `k8s/secrets.yaml` на основе ваших Base64-строк:
-   ```yaml
-   apiVersion: v1
-   kind: Secret
-   metadata:
-     name: calc-secrets
-   type: Opaque
-   data:
-     postgres-password: <ВАШ_BASE64_ПАРОЛЬ>
-     rabbitmq-password: <ВАШ_BASE64_ПАРОЛЬ>
-     redis-password: ""
-   ```
-3. Примените манифесты в кластер:
-   ```bash
-   # Развертывание секретов и баз данных
-   kubectl apply -f k8s/secrets.yaml
-   kubectl apply -f k8s/postgres.yaml
-   kubectl apply -f k8s/redis.yaml
-   kubectl apply -f k8s/rabbitmq.yaml
+1. Закодируйте ваши пароли в формат Base64 в зависимости от вашей ОС:
 
-   # Развертывание приложений и балансировщика
-   kubectl apply -f k8s/apps.yaml
-   kubectl apply -f k8s/haproxy.yaml
+   **Для Windows (PowerShell):**
+   ```powershell
+   # Кодируем строку "my_password" в Base64
+   [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("my_password"))
    ```
 
-### 3. Доступ к приложению
-После перевода всех подов в статус `Running`, калькулятор будет доступен по адресу:
-```bash
-minikube ip
-```
-Используйте полученный IP-адрес совместно с портом балансировщика HAProxy: `http://<MINIKUBE_IP>:30080`.
+   **Для Linux / macOS (Bash):**
+   ```bash
+   echo -n 'my_password' | base64
+   ```
+
+2. Создайте локальный файл `k8s/secrets.yaml` на основе скачанного шаблона `k8s/secrets.yaml.template`, подставив полученные Base64-строки.
+3. Примените все конфигурации одной командой:
+   ```bash
+   kubectl apply -f k8s/
+   ```
 
 ---
 
-## 📊 Мониторинг и метрики
+### 🔗 Ссылки для доступа к сервисам в браузере
 
-* Эндпоинт метрик приложения: `http://<MINIKUBE_IP>:30080/metrics`
-* Собранные кастомные метрики: `calc_requests_total` (счетчик общего количества запросов с разделением по эндпоинтам `/register` и `/calculate`).
+Узнайте IP-адрес вашего кластера с помощью команды `minikube ip`. Доступ к развернутым инструментам осуществляется по следующим адресам:
+
+* 🧮 **Калькулятор (через HAProxy):** `http://<MINIKUBE_IP>:30080`
+* 📊 **Grafana Дашборды:** `http://<MINIKUBE_IP>:30030`
+* 🔥 **Prometheus Метрики:** `http://<MINIKUBE_IP>:30090`
+* 🪵 **Kibana (Логи ELK):** `http://<MINIKUBE_IP>:30161`
+* 🐰 **RabbitMQ Управление:** `http://<MINIKUBE_IP>:31672`
+* 🔍 **Elasticsearch API:** `http://<MINIKUBE_IP>:30200`
+
+💡 **Подсказка:** Список всех запущенных веб-интерфейсов и ссылки на них можно посмотреть одной командой:
+```powershell
+minikube service --all
+```
