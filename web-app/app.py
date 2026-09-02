@@ -4,6 +4,7 @@ import psycopg2
 import pika
 import json
 import os
+import time
 from prometheus_client import Counter, generate_latest
 
 app = Flask(__name__)
@@ -126,21 +127,31 @@ def calculate():
     return jsonify({"status": "task queued", "source": "queue"})
 
 def init_db():
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-                id SERIAL PRIMARY KEY,
-                username VARCHAR(255) UNIQUE NOT NULL
-            );
-        """)
-        conn.commit()
-        cur.close()
-        conn.close()
-        print("✅ База данных успешно инициализирована (таблица users готова).")
-    except Exception as e:
-        print(f"❌ Не удалось инициализировать БД: {e}")
+    """Проверяет подключение к СУБД и автоматически создает таблицу users"""
+    print("⏳ Ожидание readiness PostgreSQL для веб-приложения...")
+    while True:
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            # Создаем таблицу users
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id SERIAL PRIMARY KEY,
+                    username VARCHAR(255) UNIQUE NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            """)
+            conn.commit()
+            cur.close()
+            conn.close()
+            print("✅ База данных успешно проверена. Таблица 'users' готова к работе.")
+            break
+        except psycopg2.OperationalError:
+            print("❗ PostgreSQL еще не принимает соединения. Повтор через 3 секунды...")
+            time.sleep(3)
+        except Exception as e:
+            print(f"❌ Непредвиденная ошибка инициализации БД: {e}")
+            time.sleep(5)
 
 if __name__ == '__main__':
     init_db()
