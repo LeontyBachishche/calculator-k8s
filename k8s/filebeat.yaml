@@ -14,10 +14,10 @@ data:
       processors:
         - add_kubernetes_metadata:
             default_indexers.enabled: true
-            default_matchers.enabled: false # Отключаем старый проблемный матчер
+            default_matchers.enabled: false
             matchers:
               - logs_path:
-                  logs_path: "/var/log/containers/" # Указываем путь к симлинкам K8s
+                  logs_path: "/var/log/containers/"
 
     output.elasticsearch:
       hosts: ["elasticsearch:9200"]

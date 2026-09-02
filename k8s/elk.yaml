@@ -35,11 +35,9 @@ spec:
           value: "-Xms512m -Xmx512m"
         ports:
         - containerPort: 9200
-        # --- МОНТИРУЕМ ДИСК ВНУТРЬ КОНТЕЙНЕРА ---
         volumeMounts:
         - name: elasticsearch-data
           mountPath: /usr/share/elasticsearch/data
-      # --- ОБЪЯВЛЯЕМ ТОМ, СВЯЗАННЫЙ С НАШИМ PVC ---
       volumes:
       - name: elasticsearch-data
         persistentVolumeClaim:

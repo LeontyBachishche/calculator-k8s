@@ -9,7 +9,6 @@ from flask import Response
 
 app = Flask(__name__)
 
-# Считываем хосты динамически из окружения Kubernetes
 REDIS_HOST = os.getenv('REDIS_HOST', 'redis')
 POSTGRES_HOST = os.getenv('POSTGRES_HOST', 'postgres')
 RABBITMQ_HOST = os.getenv('RABBITMQ_HOST', 'rabbitmq')
@@ -17,7 +16,6 @@ RABBITMQ_HOST = os.getenv('RABBITMQ_HOST', 'rabbitmq')
 redis = Redis(host=REDIS_HOST, port=6379)
 REQUEST_COUNT = Counter('calc_requests_total', 'Total app requests', ['method', 'endpoint'])
 
-# HTML-интерфейс калькулятора (сохранен без изменений)
 HTML_INTERFACE = """
 <!DOCTYPE html>
 <html>
@@ -110,10 +108,8 @@ def calculate():
     if cached_res:
         return jsonify({"result": cached_res.decode('utf-8'), "source": "cache"})
 
-    # ИСПРАВЛЕНО: Добавлена авторизация для Flask-приложения с новым паролем
     credentials = pika.PlainCredentials('admin', 'admin')
     parameters = pika.ConnectionParameters(host=RABBITMQ_HOST, credentials=credentials)
-    
     connection = pika.BlockingConnection(parameters)
     channel = connection.channel()
     channel.queue_declare(queue='calc_tasks')

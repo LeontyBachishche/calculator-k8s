@@ -102,13 +102,11 @@ spec:
       containers:
       - name: rabbitmq
         image: rabbitmq:3-management
-        # ---- ДОБАВЬТЕ ЭТОТ БЛОК ПЕРЕМЕННЫХ ОКРУЖЕНИЯ ----
         env:
         - name: RABBITMQ_DEFAULT_USER
-          value: "admin"          # Ваш новый логин для веб-интерфейса
+          value: "admin"
         - name: RABBITMQ_DEFAULT_PASS
-          value: "admin"  # Ваш новый надежный пароль
-        # ------------------------------------------------
+          value: "admin"
         ports:
         - containerPort: 5672
         - containerPort: 15672

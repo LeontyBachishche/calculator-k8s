@@ -5,12 +5,11 @@ metadata:
 data:
   prometheus.yml: |
     global:
-      scrape_interval: 15s   # Сбор метрик каждые 15 секунд
+      scrape_interval: 15s
     scrape_configs:
       - job_name: 'flask-calculator'
         metrics_path: /metrics
         static_configs:
-          # Указываем имя K8s-сервиса вашего Flask-приложения
           - targets: ['web-app:5000']
 ---
 apiVersion: apps/v1
@@ -32,7 +31,6 @@ spec:
         image: prom/prometheus:v2.45.0
         ports:
         - containerPort: 9090
-        # Монтируем конфигурационный файл из ConfigMap в контейнер
         volumeMounts:
         - name: config-volume
           mountPath: /etc/prometheus/prometheus.yml
@@ -63,7 +61,7 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 1Gi   # Выделяем 1 Гигабайт под настройки Grafana
+      storage: 1Gi
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -80,13 +78,12 @@ spec:
         app: grafana
     spec:
       securityContext:
-        fsGroup: 472 # Права доступа для пользователя grafana внутри контейнера
+        fsGroup: 472
       containers:
       - name: grafana
         image: grafana/grafana:10.0.0
         ports:
         - containerPort: 3000
-        # Монтируем постоянную папку данных
         volumeMounts:
         - name: grafana-storage
           mountPath: /var/lib/grafana

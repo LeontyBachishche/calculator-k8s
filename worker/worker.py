@@ -1,11 +1,9 @@
-# worker.py
 import pika
 import json
 import psycopg2
 from redis import Redis
-import os  # <-- КРИТИЧЕСКИ ВАЖНО: Импортируем модуль OS!
+import os
 
-# <-- КРИТИЧЕСКИ ВАЖНО: Объявляем переменные хостов!
 REDIS_HOST = os.getenv('REDIS_HOST', 'redis')
 POSTGRES_HOST = os.getenv('POSTGRES_HOST', 'postgres')
 RABBITMQ_HOST = os.getenv('RABBITMQ_HOST', 'rabbitmq')
@@ -28,7 +26,6 @@ def db_save(username, exp, res):
 def callback(ch, method, properties, body):
     data = json.loads(body)
     try:
-        # Безопасное вычисление
         result = eval(data['expression'], {"__builtins__": None}, {})
         redis.set(data['expression'], str(result), ex=3600)
         username = data.get('username', 'guest')
@@ -38,10 +35,8 @@ def callback(ch, method, properties, body):
         print(f"Error: {e}")
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
-# Авторизация под admin / secretpass123
 credentials = pika.PlainCredentials('admin', 'admin')
 
-# Теперь RABBITMQ_HOST гарантированно существует и заполнится!
 connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST, credentials=credentials))
 channel = connection.channel()
 channel.queue_declare(queue='calc_tasks')
