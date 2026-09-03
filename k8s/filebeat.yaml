@@ -44,7 +44,6 @@ data:
     - type: filestream
       id: k8s-hyperv-stream
       paths:
-        # Универсальные пути, включая прямые логи Docker внутри Hyper-V
         - /var/log/containers/*.log
         - /var/log/pods/*/*/*.log
         - /var/lib/docker/containers/*/*.log
@@ -55,6 +54,8 @@ data:
             matchers:
               - logs_path:
                   logs_path: "/var/log/containers/"
+              - logs_path:
+                  logs_path: "/var/lib/docker/containers/"
 
     output.elasticsearch:
       hosts: ["elasticsearch:9200"]
