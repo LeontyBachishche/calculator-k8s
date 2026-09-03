@@ -41,10 +41,13 @@ metadata:
 data:
   filebeat.yml: |
     filebeat.inputs:
-    - type: container
+    - type: filestream
+      id: k8s-hyperv-stream
       paths:
+        # Универсальные пути, включая прямые логи Docker внутри Hyper-V
         - /var/log/containers/*.log
         - /var/log/pods/*/*/*.log
+        - /var/lib/docker/containers/*/*.log
       processors:
         - add_kubernetes_metadata:
             default_indexers.enabled: true
@@ -98,7 +101,6 @@ spec:
         securityContext:
           privileged: true
           runAsUser: 0
-          allowPrivilegeEscalation: true
         volumeMounts:
         - name: config
           mountPath: /usr/share/filebeat/filebeat.yml
@@ -108,6 +110,9 @@ spec:
           readOnly: true
         - name: varlogpods
           mountPath: /var/log/pods
+          readOnly: true
+        - name: varlibdockercontainers
+          mountPath: /var/lib/docker/containers
           readOnly: true
       volumes:
       - name: config
@@ -119,3 +124,6 @@ spec:
       - name: varlogpods
         hostPath:
           path: /var/log/pods
+      - name: varlibdockercontainers
+        hostPath:
+          path: /var/lib/docker/containers
