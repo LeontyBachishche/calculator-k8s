@@ -43,6 +43,7 @@
 ```powershell
 # 1. Добавляем Docker-клиент Minikube в PATH текущей сессии
 # Иногда отсутствует \bin
+minikube start --driver=hyperv --cpus=4 --memory=6144
 $env:Path += ";$env:USERPROFILE\.minikube\bin"
 
 # 2. Связываем терминал с Docker-демоном внутри Minikube
